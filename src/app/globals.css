@@ -1,0 +1,72 @@
+@import "tailwindcss";
+
+@theme {
+  --color-foreground: hsl(222.2 84% 4.9%);
+}
+
+@layer base {
+  body {
+    @apply bg-gray-100 text-foreground antialiased;
+    font-family: var(--font-geist-sans), sans-serif;
+  }
+}
+
+@media print {
+  @page {
+    size: letter;
+    margin: 0;
+  }
+
+  body {
+    background-color: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Hide everything except the print sheets */
+  .print-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    display: block !important;
+  }
+
+  /* Ensure the sidebar and other UI are hidden */
+  header, 
+  aside, 
+  nav, 
+  button, 
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Remove any shadows or borders on the sheets during print */
+  .relative {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}
+
+/* Custom Scrollbar for the sidebar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
+}
+
+/* Ensure barcode SVGs scale to fit */
+.max-w-full svg {
+  max-width: 100%;
+  height: auto;
+}

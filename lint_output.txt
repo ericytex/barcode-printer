@@ -1,0 +1,30 @@
+
+> barcodes-printer@0.1.0 lint
+> eslint
+
+
+/Users/ericwatyekele/Research/AI2026/barcodes-printer/src/app/page.tsx
+  131:9   warning  Unused eslint-disable directive (no problems were reported from 'react-hooks/set-state-in-effect')
+  152:16  error    Error: Calling setState synchronously within an effect can trigger cascading renders
+
+Effects are intended to synchronize state between React and external systems such as manually updating the DOM, state management libraries, or other platform APIs. In general, the body of an effect should do one or both of the following:
+* Update external systems with the latest state from React.
+* Subscribe for updates from some external system, calling setState in a callback function when external state changes.
+
+Calling setState synchronously within an effect body causes cascading renders that can hurt performance, and is not recommended. (https://react.dev/learn/you-might-not-need-an-effect).
+
+/Users/ericwatyekele/Research/AI2026/barcodes-printer/src/app/page.tsx:152:16
+  150 |     if (typeof window === 'undefined') return;
+  151 |     const saved = localStorage.getItem('avery-printer-user-templates');
+> 152 |     if (saved) setSavedTemplates(JSON.parse(saved));
+      |                ^^^^^^^^^^^^^^^^^ Avoid calling setState() directly within an effect
+  153 |   }, []);
+  154 |
+  155 |   const handleSaveTemplate = (name: string) => {  react-hooks/set-state-in-effect
+  155:9   warning  'handleSaveTemplate' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  166:9   warning  'handleLoadTemplate' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              @typescript-eslint/no-unused-vars
+  173:9   warning  'handleDeleteTemplate' is assigned a value but never used                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            @typescript-eslint/no-unused-vars
+
+✖ 5 problems (1 error, 4 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
