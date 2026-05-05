@@ -11,10 +11,11 @@ interface SheetProps {
   styles: LabelStyles;
   calibration: Calibration;
   pageIndex: number;
-  selectedField: string | 'barcode' | null;
-  setSelectedField: (f: string | 'barcode' | null) => void;
-  onUpdateOffsets: (field: string | 'barcode', top: number, left: number) => void;
-  onUpdateScale: (field: string | 'barcode', scaleX: number) => void;
+  selectedFields: string[];
+  setSelectedFields: (ids: string[]) => void;
+  onMoveFields: (ids: string[], dt: number, dl: number) => void;
+  onDragEnd: () => void;
+  onUpdateScale: (field: string | 'barcode', factor: number, side?: 'left' | 'right' | 'top' | 'bottom') => void;
 }
 
 const Sheet: React.FC<SheetProps> = ({
@@ -24,15 +25,16 @@ const Sheet: React.FC<SheetProps> = ({
   styles,
   calibration,
   pageIndex,
-  selectedField,
-  setSelectedField,
-  onUpdateOffsets,
+  selectedFields,
+  setSelectedFields,
+  onMoveFields,
+  onDragEnd,
   onUpdateScale,
 }) => {
   return (
     <div
       className="relative bg-gray-100/30 shadow-2xl print:bg-white print:shadow-none mx-auto mb-10 print:mb-0"
-      onMouseDown={() => setSelectedField(null)}
+      onMouseDown={() => setSelectedFields([])}
       style={{
         width: '8.5in',
         height: '11in',
@@ -53,19 +55,20 @@ const Sheet: React.FC<SheetProps> = ({
           rowGap: `${template.verticalGap}in`,
         }}
       >
-        {labels.map((label, i) => (
+        {labels.map((label, index) => (
           <Label
-            key={`${pageIndex}-${i}`}
+            key={`${pageIndex}-${index}`}
             data={label}
             template={template}
             mapping={mapping}
             styles={styles}
-            selectedField={selectedField}
-            setSelectedField={setSelectedField}
-            onUpdateOffsets={onUpdateOffsets}
+            selectedFields={selectedFields}
+            setSelectedFields={setSelectedFields}
+            onMoveFields={onMoveFields}
+            onDragEnd={onDragEnd}
             onUpdateScale={onUpdateScale}
-            labelIndex={i}
-            labelColumn={i % template.columns}
+            labelIndex={index + (pageIndex * template.itemsPerPage)}
+            labelColumn={index % template.columns}
           />
         ))}
       </div>

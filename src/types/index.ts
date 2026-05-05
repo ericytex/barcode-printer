@@ -34,6 +34,7 @@ export interface ColumnStyle {
   offsetLeft: number;
   scaleX: number;
   visibility: VisibilityRule;
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
 }
 
 export type BarcodeType = 
@@ -47,7 +48,7 @@ export type BarcodeType =
 
 export interface LabelShape {
   id: string;
-  type: 'line' | 'rectangle' | 'barcode';
+  type: 'line' | 'rectangle' | 'barcode' | 'text';
   orientation?: 'horizontal' | 'vertical';
   top: number;
   left: number;
@@ -57,6 +58,18 @@ export interface LabelShape {
   borderWidth: number;
   borderColor: string;
   visibility: VisibilityRule;
+  barcodeColumn?: string;
+  textContent?: string;
+  fontSize?: number;
+  isBold?: boolean;
+  textAlign?: 'left' | 'center' | 'right';
+  fontFamily?: string;
+  color?: string;
+  textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  textColumn?: string;
+  barcodeScale?: number;
+  barcodeScaleX?: number;
+  barcodeHeight?: number;
 }
 
 export interface LabelStyles {

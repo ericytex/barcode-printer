@@ -31,6 +31,8 @@ interface SidebarProps {
   onSaveTemplate: (name: string) => void;
   onLoadTemplate: (t: SavedTemplate) => void;
   onDeleteTemplate: (index: number) => void;
+  saveHistory: (m: Mapping, s: LabelStyles) => void;
+  styles: LabelStyles;
 }
 
 const Sidebar: React.FC<SidebarProps> = ({
@@ -51,6 +53,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   onSaveTemplate,
   onLoadTemplate,
   onDeleteTemplate,
+  saveHistory,
+  styles,
 }) => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -211,7 +215,9 @@ const Sidebar: React.FC<SidebarProps> = ({
                           const newFields = e.target.checked
                             ? [...mapping.textFields, h]
                             : mapping.textFields.filter(f => f !== h);
-                          setMapping({ ...mapping, textFields: newFields });
+                          const next = { ...mapping, textFields: newFields };
+                          setMapping(next);
+                          saveHistory(next, styles);
                         }}
                       />
                       <span className="truncate">{h}</span>

@@ -18,7 +18,7 @@ import {
   Trash2,
   Barcode as BarcodeIcon
 } from 'lucide-react';
-import { Calibration, LabelStyles, Mapping, BarcodeType, VisibilityRule } from '@/types';
+import { Calibration, LabelStyles, Mapping, BarcodeType, VisibilityRule, LabelTemplate } from '@/types';
 
 interface DesignSidebarProps {
   styles: LabelStyles;
@@ -26,7 +26,12 @@ interface DesignSidebarProps {
   calibration: Calibration;
   setCalibration: (c: Calibration) => void;
   mapping: Mapping;
-  selectedField: string | 'barcode' | null;
+  setMapping: (m: Mapping) => void;
+  headers: string[];
+  template: LabelTemplate;
+  selectedFields: string[];
+  setSelectedFields: (ids: string[]) => void;
+  saveHistory: (m: Mapping, s: LabelStyles) => void;
 }
 
 const DesignSidebar: React.FC<DesignSidebarProps> = ({
@@ -35,10 +40,16 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
   calibration,
   setCalibration,
   mapping,
-  selectedField,
+  setMapping,
+  headers,
+  template,
+  selectedFields,
+  setSelectedFields,
+  saveHistory,
 }) => {
   const fieldRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const barcodeRef = useRef<HTMLDivElement>(null);
+  const selectedField = selectedFields[0];
 
   useEffect(() => {
     if (selectedField === 'barcode' && barcodeRef.current) {
@@ -46,7 +57,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
     } else if (selectedField && fieldRefs.current[selectedField]) {
       fieldRefs.current[selectedField]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-  }, [selectedField]);
+  }, [selectedFields, selectedField]);
   const nudge = (axis: 'top' | 'left', amount: number) => {
     setCalibration({
       ...calibration,
@@ -229,15 +240,16 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
             </button>
             <button 
               onClick={() => {
-                if (selectedField === 'barcode') {
-                  setStyles({ ...styles, barcodeScaleX: 1 });
-                } else if (selectedField) {
-                  const colStyle = styles.columnStyles[selectedField] || { fontSize: 7, isBold: false, alignment: 'center', offsetTop: 0, offsetLeft: 0, scaleX: 1 };
-                  setStyles({
-                    ...styles,
-                    columnStyles: { ...styles.columnStyles, [selectedField]: { ...colStyle, scaleX: 1 } }
-                  });
-                }
+                const firstId = selectedFields[0];
+                if (firstId === 'barcode') {
+                   setStyles({ ...styles, barcodeScale: 1 });
+                 } else if (firstId) {
+                   const colStyle = styles.columnStyles[firstId] || { fontSize: 10, isBold: false, alignment: 'center', offsetTop: 0, offsetLeft: 0, scaleX: 1 };
+                   setStyles({
+                     ...styles,
+                     columnStyles: { ...styles.columnStyles, [firstId]: { ...colStyle, scaleX: 1 } }
+                   });
+                 }
               }}
               className="w-full py-1 text-[9px] font-bold uppercase text-gray-400 hover:text-indigo-600 transition-colors"
             >
@@ -262,6 +274,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                 visibility: 'always'
               };
               
+              const isSelected = selectedFields.includes(field);
               const updateCol = (updates: Partial<typeof colStyle>) => {
                 setStyles({
                   ...styles,
@@ -275,18 +288,55 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
               return (
                 <div 
                   key={field} 
-                  ref={el => { fieldRefs.current[field] = el; }}
-                  className={`space-y-3 rounded-lg border p-3 shadow-sm transition-all duration-500 ${
-                    selectedField === field 
+                  onClick={() => setSelectedFields([field])}
+                  className={`space-y-3 rounded-lg border p-3 shadow-sm transition-all duration-500 cursor-pointer ${
+                    isSelected 
                       ? 'border-indigo-500 ring-2 ring-indigo-200 bg-white scale-[1.02]' 
                       : 'border-gray-100 bg-white'
                   }`}
                 >
                   <div className="flex items-center justify-between border-b pb-2">
-                    <span className="text-[10px] font-bold text-gray-900 truncate max-w-[120px]">{field}</span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          const updated = mapping.textFields.filter(f => f !== field);
+                          setMapping({ ...mapping, textFields: updated }); 
+                          saveHistory({ ...mapping, textFields: updated }, styles);
+                        }}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                        title="Remove from label"
+                      >
+                        <Trash2 size={12} />
+                      </button>
+                      <span className="text-[10px] font-bold text-gray-900 truncate max-w-[100px]">{field}</span>
+                    </div>
                     <div className="flex items-center gap-1">
                       <button
-                        onClick={() => updateCol({ isBold: !colStyle.isBold })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const newShape: LabelShape = {
+                            id: `shape-${Date.now()}`,
+                            type: 'barcode',
+                            barcodeColumn: field,
+                            top: 0.5,
+                            left: 0.5,
+                            width: 1,
+                            height: 1,
+                            borderStyle: 'solid',
+                            borderWidth: 0,
+                            borderColor: 'transparent',
+                            visibility: 'always'
+                          };
+                          setStyles({ ...styles, shapes: [...(styles.shapes || []), newShape] });
+                        }}
+                        className="rounded p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all active:scale-90"
+                        title="Add as Barcode"
+                      >
+                        <BarcodeIcon size={14} />
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); updateCol({ isBold: !colStyle.isBold }); }}
                         className={`rounded p-1 transition-all active:scale-90 ${
                           colStyle.isBold ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:bg-gray-50'
                         }`}
@@ -299,7 +349,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                           return (
                             <button
                               key={align}
-                              onClick={() => updateCol({ alignment: align })}
+                              onClick={(e) => { e.stopPropagation(); updateCol({ alignment: align }); }}
                               className={`rounded p-1 transition-all active:scale-90 ${
                                 colStyle.alignment === align ? 'bg-white text-indigo-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
                               }`}
@@ -346,6 +396,22 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
 
                   <div>
                     <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">
+                      Text Case
+                    </label>
+                    <select
+                      className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] shadow-sm focus:border-indigo-500 focus:outline-none"
+                      value={colStyle.textTransform || 'none'}
+                      onChange={(e) => updateCol({ textTransform: e.target.value as 'none' | 'uppercase' | 'lowercase' | 'capitalize' })}
+                    >
+                      <option value="none">Original</option>
+                      <option value="uppercase">UPPERCASE</option>
+                      <option value="lowercase">lowercase</option>
+                      <option value="capitalize">Capitalize</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">
                       Visibility Pattern
                     </label>
                     <select
@@ -374,41 +440,56 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
 
         {/* Barcode Format & Position */}
         <section 
-          ref={barcodeRef}
-          className={`transition-all duration-500 rounded-xl p-1 ${
-            selectedField === 'barcode' ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
+          onClick={() => setSelectedFields(['barcode'])}
+          className={`transition-all duration-500 rounded-xl p-1 cursor-pointer ${
+            selectedFields.includes('barcode') ? 'ring-2 ring-indigo-500 bg-indigo-50/20' : ''
           }`}
         >
           <div className="mb-4 flex items-center justify-between border-b pb-2">
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
               <Maximize size={16} />
-              <span>Barcode Config</span>
+              <span>Barcode Config {selectedFields.length === 1 && selectedFields[0] !== 'barcode' && styles.shapes?.find(s => s.id === selectedFields[0])?.type === 'barcode' ? '(Selected Clone)' : '(Primary)'}</span>
             </div>
-            {selectedField === 'barcode' && (
+            <div className="flex items-center gap-2">
               <button
-                onClick={() => {
-                  const newShape = {
-                    id: `shape-${Date.now()}`,
-                    type: 'barcode' as const,
-                    top: (styles.barcodeOffsetTop || 0) + 0.2,
-                    left: (styles.barcodeOffsetLeft || 0) + 0.2,
-                    width: 1,
-                    height: 1,
-                    borderStyle: 'solid' as const,
-                    borderWidth: 0,
-                    borderColor: 'transparent',
-                    visibility: 'always' as const
-                  };
-                  setStyles({ ...styles, shapes: [...(styles.shapes || []), newShape] });
-                }}
-                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase flex items-center gap-1 bg-indigo-50 px-2 py-1 rounded"
+                onClick={() => setMapping({ ...mapping, barcode: '' })}
+                className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                title="Remove barcode"
               >
-                <BarcodeIcon size={10} />
-                Duplicate
+                <Trash2 size={12} />
               </button>
-            )}
+            </div>
           </div>
           <div className="space-y-4">
+            <div>
+              <label className="mb-1 block text-[10px] font-bold uppercase text-gray-400">
+                Data Source (Column)
+              </label>
+              <select
+                className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                value={(selectedFields.length === 1 && selectedFields[0] !== 'barcode' ? styles.shapes?.find(s => s.id === selectedFields[0])?.barcodeColumn : mapping.barcode) || ''}
+                onChange={(e) => {
+                  const newValue = e.target.value;
+                  const firstId = selectedFields[0];
+                  if (selectedFields.length === 1 && firstId !== 'barcode' && styles.shapes?.some(s => s.id === firstId)) {
+                    setStyles({
+                      ...styles,
+                      shapes: styles.shapes.map(s => s.id === firstId ? { ...s, barcodeColumn: newValue } : s)
+                    });
+                  } else {
+                    setMapping({ ...mapping, barcode: newValue });
+                  }
+                }}
+              >
+                <option value="">None / Manual</option>
+                {headers.map((h) => (
+                  <option key={h} value={h}>
+                    {h}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div>
               <label className="mb-1 block text-[10px] font-bold uppercase text-gray-400">
                 Barcode Format
@@ -656,12 +737,37 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
               >
                 + Box
               </button>
+              <button
+                onClick={() => {
+                  const newShape: LabelShape = {
+                    id: `shape-${Date.now()}`,
+                    type: 'text',
+                    textContent: 'NEW TEXT',
+                    top: 0.5,
+                    left: 0.5,
+                    width: 1.5,
+                    height: 0.2,
+                    fontSize: 8,
+                    isBold: false,
+                    textAlign: 'center',
+                    fontFamily: 'sans-serif',
+                    borderStyle: 'solid',
+                    borderWidth: 0,
+                    borderColor: 'transparent',
+                    visibility: 'always'
+                  };
+                  setStyles({ ...styles, shapes: [...(styles.shapes || []), newShape] });
+                }}
+                className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 uppercase px-1"
+              >
+                + Text
+              </button>
             </div>
           </div>
 
           <div className="space-y-4">
             {styles.shapes?.map((shape) => {
-              const isSelected = selectedField === shape.id;
+              const isSelected = selectedFields.includes(shape.id);
               const updateShape = (updates: Partial<LabelShape>) => {
                 setStyles({
                   ...styles,
@@ -672,17 +778,18 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
               return (
                 <div 
                   key={shape.id}
-                  className={`rounded-xl border p-4 transition-all shadow-sm ${
+                  onClick={() => setSelectedFields([shape.id])}
+                  className={`rounded-xl border p-4 transition-all shadow-sm cursor-pointer ${
                     isSelected ? 'border-indigo-600 bg-indigo-50/30' : 'border-gray-200 bg-white'
                   }`}
                 >
                   <div className="mb-3 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <div className={`p-1 rounded ${isSelected ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-500'}`}>
-                        {shape.type === 'line' ? <Minus size={12} /> : shape.type === 'rectangle' ? <Square size={12} /> : <BarcodeIcon size={12} />}
+                        {shape.type === 'line' ? <Minus size={12} /> : shape.type === 'rectangle' ? <Square size={12} /> : shape.type === 'text' ? <Type size={12} /> : <BarcodeIcon size={12} />}
                       </div>
                       <span className="text-[11px] font-bold text-gray-700 uppercase tracking-tight">
-                        {shape.type === 'line' ? 'Separator' : shape.type === 'rectangle' ? 'Box' : 'Barcode Clone'}
+                        {shape.type === 'line' ? 'Separator' : shape.type === 'rectangle' ? 'Box' : shape.type === 'text' ? 'Static Text' : 'Barcode Clone'}
                       </span>
                     </div>
                     <button 
@@ -759,8 +866,184 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                         <option value="even-columns">Even Columns Only</option>
                       </select>
                     </div>
+
+                    <div className="col-span-2 border-t pt-2 mt-1 space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <div className="flex justify-between text-[9px] font-bold text-gray-400 uppercase mb-1">
+                            <span>Top Pos</span>
+                            <span className="text-indigo-600">{shape.top.toFixed(2)}in</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0" 
+                            max={template.labelHeight} 
+                            step="0.01"
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                            value={shape.top}
+                            onChange={(e) => updateShape({ top: parseFloat(e.target.value) })}
+                          />
+                        </div>
+                        <div>
+                          <div className="flex justify-between text-[9px] font-bold text-gray-400 uppercase mb-1">
+                            <span>Left Pos</span>
+                            <span className="text-indigo-600">{shape.left.toFixed(2)}in</span>
+                          </div>
+                          <input 
+                            type="range" 
+                            min="0" 
+                            max={template.labelWidth} 
+                            step="0.01"
+                            className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                            value={shape.left}
+                            onChange={(e) => updateShape({ left: parseFloat(e.target.value) })}
+                          />
+                        </div>
+                      </div>
+
+                      {shape.type !== 'barcode' && shape.type !== 'text' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <div className="flex justify-between text-[9px] font-bold text-gray-400 uppercase mb-1">
+                              <span>Width</span>
+                              <span className="text-indigo-600">{shape.width.toFixed(2)}in</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="0.05" 
+                              max={template.labelWidth} 
+                              step="0.01"
+                              className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                              value={shape.width}
+                              onChange={(e) => updateShape({ width: parseFloat(e.target.value) })}
+                            />
+                          </div>
+                          <div>
+                            <div className="flex justify-between text-[9px] font-bold text-gray-400 uppercase mb-1">
+                              <span>Height</span>
+                              <span className="text-indigo-600">{shape.height.toFixed(2)}in</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="0.01" 
+                              max={template.labelHeight} 
+                              step="0.01"
+                              className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                              value={shape.height}
+                              onChange={(e) => updateShape({ height: parseFloat(e.target.value) })}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {shape.type === 'text' && (
+                      <>
+                        <div className="col-span-2">
+                          <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">Source Column (Optional)</label>
+                          <select 
+                            className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] shadow-sm focus:border-indigo-500 outline-none"
+                            value={shape.textColumn || ''}
+                            onChange={(e) => updateShape({ textColumn: e.target.value || undefined })}
+                          >
+                            <option value="">Static Text (Manual)</option>
+                            {headers.map(h => (
+                              <option key={h} value={h}>{h}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">Content</label>
+                          <textarea 
+                            rows={2}
+                            className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[11px] shadow-sm focus:border-indigo-500 outline-none resize-none"
+                            value={shape.textContent || ''}
+                            onChange={(e) => updateShape({ textContent: e.target.value })}
+                            placeholder="Type text here..."
+                            disabled={!!shape.textColumn}
+                          />
+                        </div>
+                        <div className="col-span-2 grid grid-cols-2 gap-3">
+                          <div>
+                            <div className="flex justify-between text-[9px] font-bold text-gray-400 uppercase mb-1">
+                              <span>Size</span>
+                              <span className="text-indigo-600">{shape.fontSize || 8}pt</span>
+                            </div>
+                            <input 
+                              type="range" 
+                              min="4" 
+                              max="48" 
+                              step="0.5"
+                              className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                              value={shape.fontSize || 8}
+                              onChange={(e) => updateShape({ fontSize: parseFloat(e.target.value) })}
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">Font</label>
+                            <select 
+                              className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] shadow-sm focus:border-indigo-500 outline-none"
+                              value={shape.fontFamily || 'sans-serif'}
+                              onChange={(e) => updateShape({ fontFamily: e.target.value })}
+                            >
+                              <option value="sans-serif">Sans-Serif</option>
+                              <option value="serif">Serif</option>
+                              <option value="monospace">Monospace</option>
+                              <option value="Arial">Arial</option>
+                              <option value="Helvetica">Helvetica</option>
+                              <option value="Times New Roman">Times New Roman</option>
+                              <option value="Courier New">Courier New</option>
+                            </select>
+                          </div>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">Alignment</label>
+                          <div className="flex gap-1">
+                            {(['left', 'center', 'right'] as const).map(align => (
+                              <button
+                                key={align}
+                                onClick={() => updateShape({ textAlign: align })}
+                                className={`flex-1 rounded border py-1 text-[9px] font-bold uppercase transition-all ${
+                                  (shape.textAlign || 'center') === align
+                                    ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                                    : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                                }`}
+                              >
+                                {align[0]}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">Bold</label>
+                          <button
+                            onClick={() => updateShape({ isBold: !shape.isBold })}
+                            className={`w-full rounded border py-1 text-[9px] font-bold uppercase transition-all ${
+                              shape.isBold
+                                ? 'bg-indigo-600 border-indigo-600 text-white shadow-sm'
+                                : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            Bold
+                          </button>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">Text Case</label>
+                          <select 
+                            className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] shadow-sm focus:border-indigo-500 outline-none"
+                            value={shape.textTransform || 'none'}
+                            onChange={(e) => updateShape({ textTransform: e.target.value as 'none' | 'uppercase' | 'lowercase' | 'capitalize' })}
+                          >
+                            <option value="none">Original</option>
+                            <option value="uppercase">UPPERCASE</option>
+                            <option value="lowercase">lowercase</option>
+                            <option value="capitalize">Capitalize</option>
+                          </select>
+                        </div>
+                      </>
+                    )}
+                    </div>
                   </div>
-                </div>
               );
             })}
           </div>

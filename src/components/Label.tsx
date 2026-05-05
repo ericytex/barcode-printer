@@ -2,45 +2,60 @@
 
 import React, { memo } from 'react';
 import Barcode from 'react-barcode';
-import { LabelData, LabelTemplate, Mapping, LabelStyles } from '@/types';
+import { LabelData, LabelTemplate, Mapping, LabelStyles, LabelShape } from '@/types';
 
 interface LabelProps {
   data: LabelData;
   template: LabelTemplate;
   mapping: Mapping;
   styles: LabelStyles;
-  selectedField: string | 'barcode' | null;
-  setSelectedField: (f: string | 'barcode' | null) => void;
-  onUpdateOffsets: (field: string | 'barcode', top: number, left: number) => void;
+  selectedFields: string[];
+  setSelectedFields: (ids: string[] | ((prev: string[]) => string[])) => void;
+  onMoveFields: (ids: string[], dt: number, dl: number) => void;
+  onDragEnd: () => void;
   onUpdateScale: (field: string | 'barcode', factor: number, side?: 'left' | 'right' | 'top' | 'bottom') => void;
-  labelIndex: number;
-  labelColumn: number;
+  labelIndex?: number;
+  labelColumn?: number;
 }
-
+ 
 const Label: React.FC<LabelProps> = ({ 
   data, 
   template, 
   mapping, 
   styles,
-  selectedField,
-  setSelectedField,
-  onUpdateOffsets,
+  selectedFields,
+  setSelectedFields,
+  onMoveFields,
+  onDragEnd,
   onUpdateScale,
   labelIndex,
   labelColumn
 }) => {
+  const dragStartPos = React.useRef({ x: 0, y: 0 });
+  const initialScale = React.useRef(1);
+
+  const isEmpty = Object.keys(data).length === 0;
+ 
+  // If this is a filler label in a sheet preview, render it as a simple blank box
+  if (isEmpty && labelIndex !== undefined) {
+    return (
+      <div 
+        style={{ width: `${template.labelWidth}in`, height: `${template.labelHeight}in` }} 
+        className="relative bg-white border border-gray-200/50 print:border-transparent print:shadow-none"
+      />
+    );
+  }
+ 
+  const shouldShowPlaceholder = labelIndex === undefined; // Only show [field] in Master Design preview
+
   const shouldShowComponent = (rule: string | undefined) => {
     if (!rule || rule === 'always') return true;
-    if (rule === 'odd-labels') return (labelIndex + 1) % 2 !== 0;
-    if (rule === 'even-labels') return (labelIndex + 1) % 2 === 0;
-    if (rule === 'odd-columns') return (labelColumn + 1) % 2 !== 0;
-    if (rule === 'even-columns') return (labelColumn + 1) % 2 === 0;
+    if (rule === 'odd-labels') return (labelIndex! + 1) % 2 !== 0;
+    if (rule === 'even-labels') return (labelIndex! + 1) % 2 === 0;
+    if (rule === 'odd-columns') return (labelColumn! + 1) % 2 !== 0;
+    if (rule === 'even-columns') return (labelColumn! + 1) % 2 === 0;
     return true;
   };
-
-  const dragStartPos = React.useRef({ x: 0, y: 0 });
-  const initialOffsets = React.useRef({ top: 0, left: 0 });
-  const initialScale = React.useRef(1);
 
   const handleScaleStart = (e: React.MouseEvent, field: string | 'barcode', side: 'left' | 'right' | 'top' | 'bottom') => {
     e.preventDefault();
@@ -86,31 +101,38 @@ const Label: React.FC<LabelProps> = ({
   const handleMouseDown = (e: React.MouseEvent, field: string | 'barcode') => {
     e.preventDefault();
     e.stopPropagation();
-    setSelectedField(field);
+
+    const isMultiSelect = e.shiftKey || e.metaKey || e.ctrlKey;
+    
+    if (isMultiSelect) {
+      setSelectedFields(prev => 
+        prev.includes(field) ? prev.filter(id => id !== field) : [...prev, field]
+      );
+    } else {
+      if (!selectedFields.includes(field)) {
+        setSelectedFields([field]);
+      }
+    }
     
     dragStartPos.current = { x: e.clientX, y: e.clientY };
-    
-    if (field === 'barcode') {
-      initialOffsets.current = { top: styles.barcodeOffsetTop, left: styles.barcodeOffsetLeft };
-    } else {
-      const colStyle = styles.columnStyles[field] || { offsetTop: 0, offsetLeft: 0 };
-      initialOffsets.current = { top: colStyle.offsetTop || 0, left: colStyle.offsetLeft || 0 };
-    }
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
-      const dx = (moveEvent.clientX - dragStartPos.current.x) / 96; // Approximate pixels to inches
-      const dy = (moveEvent.clientY - dragStartPos.current.y) / 96;
+      const dx = (moveEvent.clientX - dragStartPos.current.x) / 120;
+      const dy = (moveEvent.clientY - dragStartPos.current.y) / 120;
       
-      onUpdateOffsets(
-        field, 
-        Math.round((initialOffsets.current.top + dy) * 100) / 100,
-        Math.round((initialOffsets.current.left + dx) * 100) / 100
+      onMoveFields(
+        selectedFields.includes(field) ? selectedFields : [field], 
+        dy, 
+        dx
       );
+      
+      dragStartPos.current = { x: moveEvent.clientX, y: moveEvent.clientY };
     };
 
     const handleMouseUp = () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
+      onDragEnd();
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -134,9 +156,9 @@ const Label: React.FC<LabelProps> = ({
   const isCenter = styles.barcodePosition === 'center';
 
   const renderLine = (field: string) => {
-    const colStyle = styles.columnStyles[field] || {
-      fontSize: 7,
-      isBold: mapping.textFields[0] === field,
+    const colStyle = styles.columnStyles?.[field] || {
+      fontSize: 10,
+      isBold: false,
       alignment: 'center',
       offsetTop: 0,
       offsetLeft: 0,
@@ -145,7 +167,7 @@ const Label: React.FC<LabelProps> = ({
     };
 
     const isVisible = shouldShowComponent(colStyle.visibility);
-    const isSelected = selectedField === field;
+    const isSelected = selectedFields.includes(field);
 
     return (
       <div 
@@ -160,9 +182,10 @@ const Label: React.FC<LabelProps> = ({
           style={{
             fontSize: `${colStyle.fontSize}pt`,
             textAlign: colStyle.alignment as 'left' | 'center' | 'right',
-            transform: `translate(${colStyle.offsetLeft}in, ${colStyle.offsetTop}in) scaleX(${colStyle.scaleX || 1})`
+            transform: `translate(${colStyle.offsetLeft}in, ${colStyle.offsetTop}in) scaleX(${colStyle.scaleX || 1})`,
+            textTransform: colStyle.textTransform || 'none'
           }}
-          className={`w-fit leading-[1.1] uppercase tracking-tight cursor-move transition-shadow px-0 select-none relative overflow-visible
+          className={`w-fit leading-[1.1] tracking-tight cursor-move transition-shadow px-0 select-none relative overflow-visible
             ${colStyle.isBold ? "font-bold" : "text-gray-500 print:text-black font-medium"}
             ${isSelected 
               ? "ring-2 ring-indigo-500 bg-indigo-50/50 shadow-md z-10" 
@@ -170,7 +193,7 @@ const Label: React.FC<LabelProps> = ({
             }
           `}
         >
-          <span className="pointer-events-none whitespace-nowrap">{data[field] || `[${field}]`}</span>
+          <span className="pointer-events-none whitespace-nowrap">{data[field] || (shouldShowPlaceholder ? `[${field}]` : '')}</span>
           
           {/* Resize Handles */}
           {isSelected && (
@@ -192,7 +215,10 @@ const Label: React.FC<LabelProps> = ({
 
   const renderShape = (shape: LabelShape) => {
     const isVisible = shouldShowComponent(shape.visibility);
-    const isSelected = selectedField === shape.id;
+    const isSelected = selectedFields.includes(shape.id);
+    const shapeBarcodeValue = shape.type === 'barcode' 
+      ? (shape.barcodeColumn ? (data[shape.barcodeColumn] || (shouldShowPlaceholder ? `[${shape.barcodeColumn}]` : '')) : barcodeValue)
+      : '';
 
     return (
       <div 
@@ -202,8 +228,8 @@ const Label: React.FC<LabelProps> = ({
           position: 'absolute',
           top: `${shape.top}in`,
           left: `${shape.left}in`,
-          width: shape.type === 'barcode' ? 'auto' : `${shape.width}in`,
-          height: shape.type === 'barcode' ? 'auto' : `${shape.height}in`,
+          width: (shape.type === 'barcode' || shape.type === 'text') ? 'auto' : `${shape.width}in`,
+          height: (shape.type === 'barcode' || shape.type === 'text') ? 'auto' : `${shape.height}in`,
           borderStyle: shape.borderStyle,
           borderColor: shape.borderColor,
           borderTopWidth: (shape.type === 'line' && (shape.orientation || 'horizontal') === 'horizontal') || shape.type === 'rectangle' ? `${shape.borderWidth}pt` : '0px',
@@ -223,18 +249,18 @@ const Label: React.FC<LabelProps> = ({
           flex items-center justify-center overflow-visible
         `}
       >
-        {shape.type === 'barcode' && barcodeValue && (
+        {shape.type === 'barcode' && shapeBarcodeValue && (
           <div className={`flex items-center justify-center pointer-events-none gap-1 ${
             styles.barcodeTextPosition === 'left' ? 'flex-row-reverse' : 'flex-row'
           }`}>
             <Barcode
-              value={barcodeValue}
+              value={shapeBarcodeValue}
               format={styles.barcodeType}
-              width={styles.barcodeScale * (styles.barcodeScaleX || 1) * shape.width}
-              height={styles.barcodeHeight * shape.height}
+              width={(shape.barcodeScale || styles.barcodeScale) * (shape.barcodeScaleX || styles.barcodeScaleX || 1)}
+              height={shape.barcodeHeight || styles.barcodeHeight}
               displayValue={styles.showBarcodeValue && (styles.barcodeTextPosition === 'top' || styles.barcodeTextPosition === 'bottom' || !styles.barcodeTextPosition)}
               textPosition={styles.barcodeTextPosition === 'top' ? 'top' : 'bottom'}
-              fontSize={(styles.barcodeFontSize || 8) * shape.width}
+              fontSize={shape.fontSize || styles.barcodeFontSize || 8}
               fontOptions={styles.barcodeTextBold ? "bold" : ""}
               font={styles.barcodeFontFamily || 'monospace'}
               margin={0}
@@ -251,9 +277,37 @@ const Label: React.FC<LabelProps> = ({
                 }}
                 className="text-gray-900 tracking-widest whitespace-nowrap"
               >
-                {barcodeValue}
+                {shapeBarcodeValue}
               </span>
             )}
+          </div>
+        )}
+        {shape.type === 'text' && (
+          <div 
+            style={{
+              fontSize: `${shape.fontSize || 8}pt`,
+              fontWeight: shape.isBold ? 'bold' : 'normal',
+              fontFamily: shape.fontFamily || 'sans-serif',
+              textAlign: shape.textAlign || 'center',
+              color: shape.color || '#000000',
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 
+                shape.textAlign === 'left' ? 'flex-start' : 
+                shape.textAlign === 'right' ? 'flex-end' : 'center',
+              lineHeight: 1.1,
+              whiteSpace: 'pre-wrap',
+              pointerEvents: 'none',
+              textTransform: shape.textTransform || 'none',
+              padding: '2px'
+            }}
+          >
+            {shape.textColumn 
+              ? (data[shape.textColumn] || (shouldShowPlaceholder ? `[${shape.textColumn}]` : ''))
+              : (shape.textContent || 'NEW TEXT')
+            }
           </div>
         )}
         {/* Resize Handles */}
@@ -298,7 +352,7 @@ const Label: React.FC<LabelProps> = ({
         height: `${template.labelHeight}in`,
       }}
       className={`relative flex ${flexDir} items-center justify-center overflow-visible bg-white border border-gray-200/50 shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-md transition-all p-1 text-center print:border-transparent print:shadow-none print:rounded-none`}
-      onMouseDown={() => setSelectedField(null)}
+      onMouseDown={() => setSelectedFields([])}
     >
       {/* Text Group 1 (Header for Center, or All for others) */}
       <div className="flex flex-1 flex-col items-center justify-center gap-0 min-w-0 w-full">
@@ -316,7 +370,7 @@ const Label: React.FC<LabelProps> = ({
             transform: `translate(${styles.barcodeOffsetLeft}in, ${styles.barcodeOffsetTop}in)`
           }}
           className={`cursor-move transition-shadow select-none p-0 flex items-center justify-center relative
-            ${selectedField === 'barcode'
+            ${selectedFields.includes('barcode')
               ? "ring-2 ring-indigo-500 bg-indigo-50/50 shadow-md z-10"
               : "hover:bg-gray-50 hover:ring-1 hover:ring-gray-300 print:hover:bg-transparent print:hover:ring-0"
             }
@@ -360,7 +414,7 @@ const Label: React.FC<LabelProps> = ({
           )}
 
           {/* Resize Handles */}
-          {selectedField === 'barcode' && (
+          {selectedFields.includes('barcode') && (
             <>
               <div 
                 onMouseDown={(e) => handleScaleStart(e, 'barcode', 'left')}
