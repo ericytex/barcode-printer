@@ -373,7 +373,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                       max="16"
                       step="0.5"
                       className="w-full h-1.5 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                      value={colStyle.fontSize}
+                      value={colStyle.fontSize || 7}
                       onChange={(e) => updateCol({ fontSize: parseFloat(e.target.value) })}
                     />
                   </div>
@@ -408,6 +408,23 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                       <option value="lowercase">lowercase</option>
                       <option value="capitalize">Capitalize</option>
                     </select>
+                  </div>
+                  
+                  <div>
+                    <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">
+                      Font Color
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        className="h-6 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
+                        value={colStyle.color || styles.color || '#000000'}
+                        onChange={(e) => updateCol({ color: e.target.value })}
+                      />
+                      <span className="text-[10px] font-mono text-gray-500 uppercase">
+                        {colStyle.color || styles.color || '#000000'}
+                      </span>
+                    </div>
                   </div>
 
                   <div>
@@ -541,7 +558,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                 max="2.5"
                 step="0.1"
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                value={styles.barcodeScale}
+                value={styles.barcodeScale || 0.8}
                 onChange={(e) => updateStyle('barcodeScale', parseFloat(e.target.value))}
               />
               <div className="flex justify-between text-[10px] text-gray-500 mt-1">
@@ -559,7 +576,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                 min="10"
                 max="60"
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                value={styles.barcodeHeight}
+                value={styles.barcodeHeight || 15}
                 onChange={(e) => updateStyle('barcodeHeight', parseInt(e.target.value))}
               />
               <div className="flex justify-between text-[10px] text-gray-500 mt-1">
@@ -603,6 +620,23 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                 <option value="odd-columns">Odd Columns Only</option>
                 <option value="even-columns">Even Columns Only</option>
               </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-[10px] font-bold uppercase text-gray-400">
+                Barcode Color
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  className="h-8 w-12 cursor-pointer rounded border border-gray-300 p-0.5"
+                  value={styles.barcodeColor || '#000000'}
+                  onChange={(e) => updateStyle('barcodeColor', e.target.value)}
+                />
+                <span className="text-[11px] font-mono text-gray-500 uppercase">
+                  {styles.barcodeColor || '#000000'}
+                </span>
+              </div>
             </div>
 
             <div className="space-y-3">
@@ -751,6 +785,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                     isBold: false,
                     textAlign: 'center',
                     fontFamily: 'sans-serif',
+                    color: '#000000',
                     borderStyle: 'solid',
                     borderWidth: 0,
                     borderColor: 'transparent',
@@ -848,7 +883,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                         step="0.5" 
                         min="0.5"
                         className="w-full rounded-md border border-gray-300 bg-white px-2 py-1 text-[10px] shadow-sm focus:border-indigo-500 outline-none"
-                        value={shape.borderWidth}
+                        value={shape.borderWidth || 1}
                         onChange={(e) => updateShape({ borderWidth: parseFloat(e.target.value) })}
                       />
                     </div>
@@ -867,6 +902,29 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                       </select>
                     </div>
 
+                    <div className="col-span-2">
+                      <label className="mb-1 block text-[9px] font-bold uppercase text-gray-400">
+                        {shape.type === 'text' || shape.type === 'barcode' ? 'Color' : 'Border Color'}
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          className="h-6 w-10 cursor-pointer rounded border border-gray-300 p-0.5"
+                          value={(shape.type === 'text' || shape.type === 'barcode' ? shape.color : shape.borderColor) || '#000000'}
+                          onChange={(e) => {
+                            if (shape.type === 'text' || shape.type === 'barcode') {
+                              updateShape({ color: e.target.value });
+                            } else {
+                              updateShape({ borderColor: e.target.value });
+                            }
+                          }}
+                        />
+                        <span className="text-[10px] font-mono text-gray-500 uppercase">
+                          {(shape.type === 'text' || shape.type === 'barcode' ? shape.color : shape.borderColor) || '#000000'}
+                        </span>
+                      </div>
+                    </div>
+
                     <div className="col-span-2 border-t pt-2 mt-1 space-y-3">
                       <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -880,7 +938,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                             max={template.labelHeight} 
                             step="0.01"
                             className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                            value={shape.top}
+                            value={shape.top || 0}
                             onChange={(e) => updateShape({ top: parseFloat(e.target.value) })}
                           />
                         </div>
@@ -895,7 +953,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                             max={template.labelWidth} 
                             step="0.01"
                             className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                            value={shape.left}
+                            value={shape.left || 0}
                             onChange={(e) => updateShape({ left: parseFloat(e.target.value) })}
                           />
                         </div>
@@ -914,7 +972,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                               max={template.labelWidth} 
                               step="0.01"
                               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                              value={shape.width}
+                              value={shape.width || 0.5}
                               onChange={(e) => updateShape({ width: parseFloat(e.target.value) })}
                             />
                           </div>
@@ -929,7 +987,7 @@ const DesignSidebar: React.FC<DesignSidebarProps> = ({
                               max={template.labelHeight} 
                               step="0.01"
                               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-                              value={shape.height}
+                              value={shape.height || 0.5}
                               onChange={(e) => updateShape({ height: parseFloat(e.target.value) })}
                             />
                           </div>

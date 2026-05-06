@@ -1,0 +1,350 @@
+[
+  {
+    "name": "R21-3",
+    "timestamp": 1778057097651,
+    "design": {
+      "template": {
+        "id": "5160",
+        "name": "Avery 5160 (3 x 10)",
+        "columns": 3,
+        "rows": 10,
+        "labelWidth": 2.625,
+        "labelHeight": 1,
+        "marginTop": 0.5,
+        "marginBottom": 0.5,
+        "marginLeft": 0.1875,
+        "marginRight": 0.1875,
+        "horizontalGap": 0.125,
+        "verticalGap": 0,
+        "labelsPerPage": 30
+      },
+      "mapping": {
+        "textFields": [
+          "id",
+          "facility_code"
+        ],
+        "barcode": null
+      },
+      "styles": {
+        "fontSizeHeader": 7.5,
+        "fontSizeText": 6.5,
+        "barcodeScale": 0.6,
+        "barcodeHeight": 22,
+        "showBarcodeValue": false,
+        "barcodeFontSize": 8,
+        "barcodeTextBold": false,
+        "barcodeFontFamily": "monospace",
+        "barcodeTextPosition": "bottom",
+        "barcodeType": "CODE128",
+        "barcodePosition": "bottom",
+        "barcodeOffsetTop": 0,
+        "barcodeOffsetLeft": 0,
+        "barcodeScaleX": 1.1,
+        "barcodeVisibility": "always",
+        "columnStyles": {
+          "id": {
+            "offsetTop": 0.6833333333333329,
+            "offsetLeft": 0.11,
+            "scaleX": 0.9,
+            "fontSize": 10.5
+          },
+          "facility_code": {
+            "offsetTop": 0.1,
+            "offsetLeft": 0.1,
+            "fontSize": 10
+          }
+        },
+        "shapes": [
+          {
+            "id": "shape-1778052336300",
+            "type": "text",
+            "textContent": "R21-NegStudy-R1",
+            "top": 0.07500000000000007,
+            "left": 0.13,
+            "width": 1.5,
+            "height": 0.2,
+            "fontSize": 8,
+            "isBold": false,
+            "textAlign": "center",
+            "fontFamily": "sans-serif",
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always"
+          },
+          {
+            "id": "shape-1778052396553",
+            "type": "text",
+            "textContent": "DBS",
+            "top": 0.2333333333333331,
+            "left": 0.79,
+            "width": 1.5,
+            "height": 0.2,
+            "fontSize": 6,
+            "isBold": false,
+            "textAlign": "center",
+            "fontFamily": "sans-serif",
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always"
+          },
+          {
+            "id": "shape-1778052618458",
+            "type": "barcode",
+            "barcodeColumn": "id",
+            "top": 0.5583333333333331,
+            "left": 0.11,
+            "width": 1,
+            "height": 1,
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always"
+          },
+          {
+            "id": "shape-1778052905141",
+            "type": "line",
+            "orientation": "vertical",
+            "top": 0.05,
+            "left": 1.34,
+            "width": 0.05,
+            "height": 0.89,
+            "borderStyle": "dashed",
+            "borderWidth": 1.5,
+            "borderColor": "#000000",
+            "visibility": "always"
+          },
+          {
+            "id": "shape-1778053279742-0",
+            "type": "text",
+            "textContent": "R21-NegStudy-R1",
+            "top": 0.07500000000000008,
+            "left": 1.43,
+            "width": 1.5,
+            "height": 0.2,
+            "fontSize": 8,
+            "isBold": false,
+            "textAlign": "center",
+            "fontFamily": "sans-serif",
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always"
+          },
+          {
+            "id": "shape-1778053279742-1",
+            "type": "text",
+            "textContent": "DBS",
+            "top": 0.2333333333333331,
+            "left": 2.1333333333333337,
+            "width": 1.5,
+            "height": 0.2,
+            "fontSize": 6,
+            "isBold": false,
+            "textAlign": "center",
+            "fontFamily": "sans-serif",
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always"
+          },
+          {
+            "id": "shape-1778053279742-3",
+            "type": "barcode",
+            "barcodeColumn": "id",
+            "top": 0.558333333333333,
+            "left": 1.42,
+            "width": 1,
+            "height": 1,
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always"
+          },
+          {
+            "type": "text",
+            "textColumn": "id",
+            "top": 0.766666666666666,
+            "left": 1.48,
+            "fontSize": 10.5,
+            "isBold": false,
+            "textAlign": "center",
+            "textTransform": "none",
+            "width": 1.5,
+            "height": 0.2,
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always",
+            "id": "shape-1778053279742-4"
+          },
+          {
+            "type": "text",
+            "textColumn": "facility_code",
+            "top": 0.34166666666666684,
+            "left": 1.44,
+            "fontSize": 10,
+            "isBold": false,
+            "textAlign": "center",
+            "textTransform": "none",
+            "color": "#000000",
+            "width": 1.5,
+            "height": 0.2,
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always",
+            "id": "shape-1778054171443-0"
+          }
+        ]
+      },
+      "calibration": {
+        "top": 0,
+        "left": 0
+      }
+    }
+  },
+  {
+    "name": "Blood-Smear1",
+    "timestamp": 1778067022881,
+    "design": {
+      "template": {
+        "id": "10008404",
+        "name": "Zebra Z-Xtreme 5000T (4 across - 0.9375 x 0.9375)",
+        "columns": 4,
+        "rows": 1,
+        "labelWidth": 0.9375,
+        "labelHeight": 0.9375,
+        "marginTop": 0,
+        "marginBottom": 0,
+        "marginLeft": 0.0625,
+        "marginRight": 0.0625,
+        "horizontalGap": 0.0625,
+        "verticalGap": 0,
+        "labelsPerPage": 4,
+        "pageWidth": 4,
+        "pageHeight": 0.9375
+      },
+      "mapping": {
+        "textFields": [
+          "id",
+          "facility_code"
+        ],
+        "barcode": "id"
+      },
+      "styles": {
+        "fontSizeHeader": 7.5,
+        "fontSizeText": 6.5,
+        "barcodeScale": 2.5,
+        "barcodeHeight": 26,
+        "showBarcodeValue": false,
+        "barcodeType": "CODE128",
+        "barcodePosition": "bottom",
+        "barcodeOffsetTop": -0.15666666666666668,
+        "barcodeOffsetLeft": 0.006666666666666831,
+        "columnStyles": {
+          "LastFourChars": {
+            "fontSize": 7,
+            "isBold": true,
+            "alignment": "center",
+            "offsetTop": 0.06,
+            "offsetLeft": 0.02,
+            "visibility": "odd-labels",
+            "scaleX": 0.9
+          },
+          "Barcode": {
+            "fontSize": 7.5,
+            "isBold": true,
+            "alignment": "center",
+            "offsetTop": -0.04,
+            "offsetLeft": -0.65,
+            "scaleX": 1.02
+          },
+          "id": {
+            "fontSize": 9.5,
+            "isBold": false,
+            "alignment": "center",
+            "offsetTop": 0.5416666666666666,
+            "offsetLeft": 1.700029006457271e-16,
+            "scaleX": 0.84,
+            "visibility": "always"
+          },
+          "facility": {
+            "fontSize": 7,
+            "isBold": false,
+            "alignment": "center",
+            "offsetTop": 0.03,
+            "offsetLeft": -0.86,
+            "scaleX": 1,
+            "visibility": "always"
+          },
+          "date_created": {
+            "fontSize": 7,
+            "isBold": false,
+            "alignment": "center",
+            "offsetTop": 0,
+            "offsetLeft": 0,
+            "scaleX": 1,
+            "visibility": "always"
+          },
+          "facility_code": {
+            "fontSize": 7,
+            "isBold": true,
+            "alignment": "center",
+            "offsetTop": -0.011666666666666636,
+            "offsetLeft": -0.04499999999999968,
+            "scaleX": 1,
+            "visibility": "always"
+          }
+        },
+        "barcodeScaleX": 0.2,
+        "shapes": [
+          {
+            "id": "shape-1778060966408",
+            "type": "text",
+            "textContent": "R21-NegStudy-R1",
+            "top": 0.008333333333333135,
+            "left": 0.041666666666666546,
+            "width": 1.47,
+            "height": 0.2,
+            "fontSize": 6.5,
+            "isBold": false,
+            "textAlign": "center",
+            "fontFamily": "sans-serif",
+            "color": "#000000",
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always"
+          },
+          {
+            "id": "shape-1778061023325",
+            "type": "text",
+            "textContent": "Blood Smear",
+            "top": 0.1416666666666667,
+            "left": 0.45833333333333315,
+            "width": 1700.7742662096464,
+            "height": 0.2,
+            "fontSize": 5,
+            "isBold": false,
+            "textAlign": "center",
+            "fontFamily": "sans-serif",
+            "color": "#000000",
+            "borderStyle": "solid",
+            "borderWidth": 0,
+            "borderColor": "transparent",
+            "visibility": "always"
+          }
+        ],
+        "barcodeTextBold": true,
+        "barcodeFontSize": 10,
+        "barcodeFontFamily": "sans-serif"
+      },
+      "calibration": {
+        "top": 0,
+        "left": 0
+      }
+    }
+  }
+]

@@ -183,7 +183,8 @@ const Label: React.FC<LabelProps> = ({
             fontSize: `${colStyle.fontSize}pt`,
             textAlign: colStyle.alignment as 'left' | 'center' | 'right',
             transform: `translate(${colStyle.offsetLeft}in, ${colStyle.offsetTop}in) scaleX(${colStyle.scaleX || 1})`,
-            textTransform: colStyle.textTransform || 'none'
+            textTransform: colStyle.textTransform || 'none',
+            color: colStyle.color || styles.color || '#000000'
           }}
           className={`w-fit leading-[1.1] tracking-tight cursor-move transition-shadow px-0 select-none relative overflow-visible
             ${colStyle.isBold ? "font-bold" : "text-gray-500 print:text-black font-medium"}
@@ -265,6 +266,7 @@ const Label: React.FC<LabelProps> = ({
               font={styles.barcodeFontFamily || 'monospace'}
               margin={0}
               background="transparent"
+              lineColor={shape.color || styles.barcodeColor || '#000000'}
               renderer="svg"
             />
             {styles.showBarcodeValue && (styles.barcodeTextPosition === 'left' || styles.barcodeTextPosition === 'right') && (
@@ -273,9 +275,10 @@ const Label: React.FC<LabelProps> = ({
                   fontSize: `${(styles.barcodeFontSize || 8) * shape.width}pt`,
                   fontFamily: styles.barcodeFontFamily || 'monospace',
                   fontWeight: styles.barcodeTextBold ? 'bold' : 'normal',
-                  lineHeight: 1
+                  lineHeight: 1,
+                  color: shape.color || styles.barcodeColor || '#000000'
                 }}
-                className="text-gray-900 tracking-widest whitespace-nowrap"
+                className="tracking-widest whitespace-nowrap"
               >
                 {shapeBarcodeValue}
               </span>
@@ -350,8 +353,9 @@ const Label: React.FC<LabelProps> = ({
       style={{
         width: `${template.labelWidth}in`,
         height: `${template.labelHeight}in`,
+        boxSizing: 'border-box',
       }}
-      className={`relative flex ${flexDir} items-center justify-center overflow-visible bg-white border border-gray-200/50 shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-md transition-all p-1 text-center print:border-transparent print:shadow-none print:rounded-none`}
+      className={`relative flex ${flexDir} items-center justify-center overflow-hidden bg-white border border-gray-100 shadow-[0_1px_2px_rgba(0,0,0,0.06)] hover:shadow-md transition-all p-1 text-center rounded-sm`}
       onMouseDown={() => setSelectedFields([])}
     >
       {/* Text Group 1 (Header for Center, or All for others) */}
@@ -393,6 +397,7 @@ const Label: React.FC<LabelProps> = ({
                 font={styles.barcodeFontFamily || 'monospace'}
                 margin={0}
                 background="transparent"
+                lineColor={styles.barcodeColor || '#000000'}
                 renderer="svg"
               />
               {styles.showBarcodeValue && (styles.barcodeTextPosition === 'left' || styles.barcodeTextPosition === 'right') && (
@@ -401,9 +406,10 @@ const Label: React.FC<LabelProps> = ({
                     fontSize: `${styles.barcodeFontSize || 8}pt`,
                     fontFamily: styles.barcodeFontFamily || 'monospace',
                     fontWeight: styles.barcodeTextBold ? 'bold' : 'normal',
-                    lineHeight: 1
+                    lineHeight: 1,
+                    color: styles.barcodeColor || '#000000'
                   }}
-                  className="text-gray-900 tracking-widest whitespace-nowrap"
+                  className="tracking-widest whitespace-nowrap"
                 >
                   {barcodeValue}
                 </span>

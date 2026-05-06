@@ -33,11 +33,11 @@ const Sheet: React.FC<SheetProps> = ({
 }) => {
   return (
     <div
-      className="relative bg-gray-100/30 shadow-2xl print:bg-white print:shadow-none mx-auto mb-10 print:mb-0"
+      className="relative bg-gray-100/30 shadow-2xl print:bg-white print:shadow-none mx-auto mb-10 print:mb-0 print:m-0"
       onMouseDown={() => setSelectedFields([])}
       style={{
-        width: '8.5in',
-        height: '11in',
+        width: template.pageWidth ? `${template.pageWidth}in` : '8.5in',
+        height: template.pageHeight ? `${template.pageHeight}in` : '11in',
         paddingTop: `${template.marginTop + calibration.top}in`,
         paddingLeft: `${template.marginLeft + calibration.left}in`,
         paddingRight: `${template.marginRight}in`,
@@ -47,29 +47,42 @@ const Sheet: React.FC<SheetProps> = ({
       }}
     >
       <div
-        className="grid h-full w-full"
         style={{
+          display: 'grid',
           gridTemplateColumns: `repeat(${template.columns}, ${template.labelWidth}in)`,
           gridTemplateRows: `repeat(${template.rows}, ${template.labelHeight}in)`,
           columnGap: `${template.horizontalGap}in`,
           rowGap: `${template.verticalGap}in`,
+          width: '100%',
+          height: '100%',
+          boxSizing: 'border-box',
+          justifyContent: 'flex-start',
+          alignContent: 'flex-start',
         }}
       >
         {labels.map((label, index) => (
-          <Label
-            key={`${pageIndex}-${index}`}
-            data={label}
-            template={template}
-            mapping={mapping}
-            styles={styles}
-            selectedFields={selectedFields}
-            setSelectedFields={setSelectedFields}
-            onMoveFields={onMoveFields}
-            onDragEnd={onDragEnd}
-            onUpdateScale={onUpdateScale}
-            labelIndex={index + (pageIndex * template.itemsPerPage)}
-            labelColumn={index % template.columns}
-          />
+          <div 
+            key={`${pageIndex}-${index}`} 
+            style={{ 
+              width: `${template.labelWidth}in`,
+              height: `${template.labelHeight}in`,
+              overflow: 'hidden'
+            }}
+          >
+            <Label
+              data={label}
+              template={template}
+              mapping={mapping}
+              styles={styles}
+              selectedFields={selectedFields}
+              setSelectedFields={setSelectedFields}
+              onMoveFields={onMoveFields}
+              onDragEnd={onDragEnd}
+              onUpdateScale={onUpdateScale}
+              labelIndex={index + (pageIndex * template.labelsPerPage)}
+              labelColumn={index % template.columns}
+            />
+          </div>
         ))}
       </div>
     </div>

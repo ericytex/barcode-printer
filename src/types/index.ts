@@ -1,5 +1,5 @@
 export interface LabelTemplate {
-  id: '5160' | '5167';
+  id: string;
   name: string;
   columns: number;
   rows: number;
@@ -12,6 +12,8 @@ export interface LabelTemplate {
   horizontalGap: number; // in inches (if any)
   verticalGap: number; // in inches (if any)
   labelsPerPage: number;
+  pageWidth?: number; // in inches (optional, defaults to 8.5)
+  pageHeight?: number; // in inches (optional, defaults to 11)
 }
 
 export interface Calibration {
@@ -35,6 +37,7 @@ export interface ColumnStyle {
   scaleX: number;
   visibility: VisibilityRule;
   textTransform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
+  color?: string;
 }
 
 export type BarcodeType = 
@@ -88,6 +91,8 @@ export interface LabelStyles {
   barcodeOffsetTop: number;
   barcodeOffsetLeft: number;
   barcodeVisibility: VisibilityRule;
+  color?: string;
+  barcodeColor?: string;
   columnStyles: Record<string, ColumnStyle>;
   shapes: LabelShape[];
 }

@@ -103,7 +103,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           <select
             className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
             value={template.id}
-            onChange={(e) => setTemplate(TEMPLATES[e.target.value as '5160' | '5167'])}
+            onChange={(e) => setTemplate(TEMPLATES[e.target.value])}
           >
             {Object.values(TEMPLATES).map((t) => (
               <option key={t.id} value={t.id}>
@@ -187,7 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                 </label>
                 <select
                   className="w-full rounded-md border border-gray-300 bg-white px-2 py-1.5 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  value={mapping.barcode}
+                  value={mapping.barcode || ''}
                   onChange={(e) => setMapping({ ...mapping, barcode: e.target.value })}
                 >
                   <option value="">Select Column</option>

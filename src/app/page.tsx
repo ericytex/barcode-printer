@@ -46,6 +46,8 @@ export default function Home() {
     barcodeOffsetLeft: 0,
     barcodeScaleX: 1,
     barcodeVisibility: 'always',
+    color: '#000000',
+    barcodeColor: '#000000',
     columnStyles: {},
     shapes: [],
   });
@@ -141,7 +143,7 @@ export default function Home() {
         
         setMapping(prev => ({
           ...prev,
-          barcode: selectedFields.includes('barcode') ? null : prev.barcode,
+          barcode: selectedFields.includes('barcode') ? '' : prev.barcode,
           textFields: (prev.textFields || []).filter(f => !selectedFields.includes(f))
         }));
         
@@ -173,6 +175,7 @@ export default function Home() {
               barcodeScaleX: styles.barcodeScaleX || 1,
               barcodeHeight: styles.barcodeHeight,
               fontSize: styles.barcodeFontSize || 8,
+              color: styles.barcodeColor || '#000000',
               borderStyle: 'solid',
               borderWidth: 0,
               borderColor: 'transparent',
@@ -195,6 +198,7 @@ export default function Home() {
                 isBold: colStyle.isBold || false,
                 textAlign: colStyle.alignment || 'center',
                 textTransform: colStyle.textTransform || 'none',
+                color: colStyle.color || styles.color || '#000000',
                 width: 1.5,
                 height: 0.2,
                 borderStyle: 'solid',
@@ -386,20 +390,65 @@ export default function Home() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const saved = localStorage.getItem('avery-printer-user-templates');
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (saved) setSavedTemplates(JSON.parse(saved));
+    
+    fetch('/api/templates')
+      .then(res => res.json())
+      .then((data: SavedTemplate[]) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setSavedTemplates(data);
+        } else {
+          // If no templates exist on disk, attempt to recover the last autosaved design
+          const lastDesign = localStorage.getItem('avery-printer-design');
+          if (lastDesign) {
+            try {
+              const parsedDesign = JSON.parse(lastDesign);
+              if (parsedDesign.template && parsedDesign.styles) {
+                const recovered = {
+                  name: 'Recovered Design',
+                  timestamp: Date.now(),
+                  design: parsedDesign
+                };
+                setSavedTemplates([recovered]);
+                // Save it to the backend so it's persisted on disk
+                fetch('/api/templates', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(recovered),
+                }).catch(e => console.warn('Failed to auto-save recovered design', e));
+              }
+            } catch (e) {
+              console.warn('Failed to parse autosave for recovery', e);
+            }
+          }
+        }
+      })
+      .catch(e => {
+        console.warn('Failed to fetch templates from API', e);
+      });
   }, []);
 
-  const handleSaveTemplate = (name: string) => {
+  const handleSaveTemplate = async (name: string) => {
     const newTemplate: SavedTemplate = {
       name,
       timestamp: Date.now(),
       design: { template, mapping, styles, calibration }
     };
+    
+    // Optimistic UI update
     const updated = [...savedTemplates, newTemplate];
     setSavedTemplates(updated);
-    localStorage.setItem('avery-printer-user-templates', JSON.stringify(updated));
+    
+    try {
+      await fetch('/api/templates', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTemplate),
+      });
+    } catch (e) {
+      console.error('Failed to save template to disk', e);
+      setSavedTemplates(savedTemplates); // revert on failure
+      alert('Failed to save template to disk. Please try again.');
+    }
   };
 
   const handleLoadTemplate = (t: SavedTemplate) => {
@@ -407,12 +456,23 @@ export default function Home() {
     setMapping(t.design.mapping);
     setStyles(t.design.styles);
     setCalibration(t.design.calibration);
+    saveHistory(t.design.mapping, t.design.styles);
   };
 
-  const handleDeleteTemplate = (index: number) => {
+  const handleDeleteTemplate = async (index: number) => {
+    // Optimistic UI update
     const updated = savedTemplates.filter((_, i) => i !== index);
     setSavedTemplates(updated);
-    localStorage.setItem('avery-printer-user-templates', JSON.stringify(updated));
+    
+    try {
+      await fetch(`/api/templates?index=${index}`, {
+        method: 'DELETE',
+      });
+    } catch (e) {
+      console.error('Failed to delete template from disk', e);
+      setSavedTemplates(savedTemplates); // revert on failure
+      alert('Failed to delete template from disk. Please try again.');
+    }
   };
 
   // Save design state
@@ -434,10 +494,14 @@ export default function Home() {
 
   const handlePrint = () => {
     setIsPrinting(true);
+    const originalTitle = document.title;
+    document.title = ''; // Clear title to remove browser headers
+    
     setTimeout(() => {
       window.print();
+      document.title = originalTitle;
       setIsPrinting(false);
-    }, 100);
+    }, 500);
   };
 
   // Monitor print events for system print dialog (Cmd+P)
@@ -492,6 +556,31 @@ export default function Home() {
 
   return (
     <main className="flex h-screen overflow-hidden bg-gray-50 print:block print:h-auto print:overflow-visible">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @media print {
+          @page {
+            size: ${template.id === '10008404' ? '4.0625in 5in' : `${template.pageWidth || 8.5}in ${template.pageHeight || 11}in`} !important;
+            margin: 0 !important;
+          }
+          html, body {
+            margin: 0 !important;
+            padding: 0 !important;
+            width: ${template.pageWidth || 8.5}in !important;
+            height: ${template.pageHeight || 11}in !important;
+            overflow: hidden !important;
+          }
+          .print-container {
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: ${template.pageWidth || 8.5}in !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            display: block !important;
+          }
+        }
+      `}} />
+
       <Sidebar
         template={template}
         setTemplate={setTemplate}
@@ -567,11 +656,11 @@ export default function Home() {
             </div>
           ) : (
             <div className="print-container">
-            {activeTab === 'preview' ? (
+            {(activeTab === 'preview' || isPrinting) ? (
               pages.map((pageData, index) => {
                 const shouldRenderOnScreen = isPrinting || previewLimit === 'all' || index < previewLimit;
-                if (!shouldRenderOnScreen) return (
-                  <div key={index} className="hidden print:block h-[11in]">
+                if (!shouldRenderOnScreen && !isPrinting) return (
+                  <div key={index} className="hidden print:block">
                     <Sheet
                       pageIndex={index}
                       labels={pageData}
@@ -607,7 +696,7 @@ export default function Home() {
               })
             ) : (
               <div 
-                className="flex h-full items-center justify-center min-h-[600px]"
+                className="flex h-full items-center justify-center min-h-[600px] print:hidden"
                 onMouseDown={() => setSelectedFields([])}
               >
                 <div 
@@ -633,6 +722,28 @@ export default function Home() {
                     Actual physical size: {template.labelWidth}&quot; x {template.labelHeight}&quot;
                   </div>
                 </div>
+              </div>
+            )}
+            
+            {/* Hidden print-only container for when in design mode but printing */}
+            {activeTab === 'design' && !isPrinting && (
+              <div className="hidden print:block">
+                {pages.map((pageData, index) => (
+                  <Sheet
+                    key={`print-${template.id}-${index}`}
+                    pageIndex={index}
+                    labels={pageData}
+                    template={template}
+                    mapping={mapping}
+                    styles={styles}
+                    calibration={calibration}
+                    selectedFields={selectedFields}
+                    setSelectedFields={setSelectedFields}
+                    onMoveFields={handleMoveFields}
+                    onDragEnd={() => saveHistory(mapping, styles)}
+                    onUpdateScale={handleUpdateScale}
+                  />
+                ))}
               </div>
             )}
             
